@@ -1,0 +1,21 @@
+name = "algodesign"
+defaultTargets = ["AlgoDesign"]
+
+# Depends on cslib (leanprover/cslib) so the lean-toolchain, Mathlib revision and complexity
+# tooling (Cslib.Algorithms.Lean.TimeM) match theirs, purely as a consumer of their public API.
+# Every declaration here lives under the `AlgoDesign` namespace, never `Cslib.*`.
+[[require]]
+name = "cslib"
+scope = "leanprover"
+
+[leanOptions]
+# Mirrors cslib's own linter set, so code written in their style gets the same feedback here.
+weak.linter.mathlibStandardSet = true
+weak.linter.flexible = true
+weak.linter.pythonStyle = false
+weak.linter.checkInitImports = false
+weak.linter.allScriptsDocumented = false
+weak.linter.unicodeLinter = false
+
+[[lean_lib]]
+name = "AlgoDesign"

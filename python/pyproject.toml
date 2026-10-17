@@ -1,0 +1,76 @@
+[project]
+name = "algodesign"
+version = "0.3.0"
+description = "Readable implementations for the textbook \"Modern Algorithm Design\"."
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = []
+
+[project.optional-dependencies]
+# Exact pins: the test docstrings quote catch rates measured under these versions, and a new
+# Hypothesis can change what the generators draw. Move them in a commit that re-measures.
+dev = ["pytest==8.3.5", "hypothesis==6.150.3", "mypy==2.3.1", "ruff==0.11.2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# The width is 100 columns, the library's own wrap, and `ruff check` holds the library to it: the
+# modules are what a reader opens beside the page. Tests are exempt, for their measurement tables
+# and long assertion messages. `ruff format` is not adopted: at this width it would rewrite many of
+# the files, among them the slice spacing `rabin_karp.py` keeps to match the printed listing
+# (`text[i:i + m]`), for no change a reader could see.
+[tool.ruff]
+line-length = 100
+
+# Beyond the defaults, rules that need no style judgement: sorted imports (I001), `pairwise` for
+# adjacent pairs (RUF007), docstrings that print flush in `help()` (D207), `all`/`any` for a loop
+# that only answers yes or no (SIM110), and the Python 3.12 spellings (UP). UP038 is left out: it
+# is deprecated upstream, since the tuple form of `isinstance` is the faster one.
+[tool.ruff.lint]
+extend-select = ["E501", "I001", "RUF007", "D207", "SIM110", "UP"]
+ignore = ["UP038"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501"]
+# The Search chapter prints the rotations' three assignments on one line.
+"algodesign/searching/llrb.py" = ["E702"]
+"algodesign/searching/treap.py" = ["E702"]
+# The Strings chapter prints the search's key as a lambda, `first_m`.
+"algodesign/strings/suffix_array.py" = ["E731"]
+# `contains` is Sedgewick's "look at each element in turn", and the Lean counts the comparisons
+# that loop makes; `any(...)` would hide the loop being counted.
+"algodesign/searching/sequential_search.py" = ["SIM110"]
+# The bench's `is_nearest_first` pairs each answer with the next as `zip(answer, answer[1:])`,
+# which reads as the order it checks.
+"algodesign/geometry/workbench.py" = ["RUF007"]
+
+# The three balanced trees reach into a child the invariant guarantees is there (`h.left.left` in
+# a rotation). Spelling out each `is not None` would bury the code the chapter prints, so mypy
+# does not ask for it in these three modules; every other check stays on.
+[[tool.mypy.overrides]]
+module = [
+    "algodesign.searching.llrb",
+    "algodesign.searching.treap",
+    "algodesign.searching.red_black_standard",
+]
+disable_error_code = ["union-attr"]
+
+# The same exemption for ty, which reads neither mypy's overrides nor its coded ignores. ty reports
+# the invariant-backed child under four rule names where mypy has one code, so the four are off
+# here; mypy, the gate, still checks argument and return types in these files.
+[[tool.ty.overrides]]
+include = [
+    "algodesign/searching/llrb.py",
+    "algodesign/searching/treap.py",
+    "algodesign/searching/red_black_standard.py",
+]
+
+[tool.ty.overrides.rules]
+unresolved-attribute = "ignore"
+invalid-assignment = "ignore"
+invalid-argument-type = "ignore"
+invalid-return-type = "ignore"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

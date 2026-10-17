@@ -1,0 +1,79 @@
+[package]
+name = "algodesign"
+version = "0.3.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Implementations for the textbook \"Modern Algorithm Design\"."
+
+[lints]
+workspace = true
+
+# `unchecked` is for tests that build a broken structure on purpose: invariant-unchecked
+# constructors (`from_parts_unchecked`), the plain parts they take and give back (`to_parts`,
+# `TrieParts`, `PatriciaParts`, `FmParts`), and a few views of an algorithm's intermediate state
+# (`interval_steps`, `scan_states`, `suffix_array_with_rounds`). A validity predicate is only
+# tested if it sees invalid structures. Off by default, so an ordinary consumer of this crate
+# cannot build a structure that breaks its own invariants. `cargo test --features unchecked`.
+[features]
+unchecked = []
+
+[dependencies]
+rand = "0.9"
+
+[dev-dependencies]
+proptest = "1"
+criterion = "0.5"
+# A counting global allocator for `tests/allocations.rs`, `tests/bench_inputs.rs` and
+# `tests/find_memory.rs`. It is a crate because installing one means `unsafe impl GlobalAlloc`,
+# and the workspace forbids `unsafe`: this way the `unsafe` stays in the dependency, as it does in
+# `std`, and nothing here writes any.
+stats_alloc = "0.1"
+# Third-party oracles for `strings::suffix_array` and `strings::bwt::encode`. These run SA-IS
+# where this crate runs prefix doubling, which is exactly what makes them worth testing against:
+# agreement is evidence, not a tautology. They are not oracles for `occ` --
+# `tests/third_party_oracles.rs` does not test it.
+suffix = "1.3"
+bio = "4"
+# Differentials for `geometry`: independent implementations of the same contracts, so agreement
+# is evidence, not a tautology. None is a dependency of the library. `kiddo` (k-d tree) and
+# `rstar` (R-tree) for exact NN and range; `robust` (a port of Shewchuk's predicates) for
+# `orient2d`; `hnsw_rs` and `instant-distance` (HNSW) for recall at matched parameters;
+# `num-rational`/`num-bigint` for the exact determinant `orient2d` is checked against.
+kiddo = "6.3"
+rstar = "0.13"
+robust = "1.2"
+hnsw_rs = "0.3.4"
+instant-distance = "0.6.1"
+num-rational = { version = "0.4", features = ["num-bigint"] }
+num-bigint = "0.4"
+
+[[bench]]
+name = "structures"
+harness = false
+
+[[bench]]
+name = "strings"
+harness = false
+
+[[bench]]
+name = "geometry"
+harness = false
+
+# One process, one thread, no test harness: the counting allocator is global, and libtest's own
+# threads would allocate into the counts.
+[[test]]
+name = "allocations"
+harness = false
+
+# Also counts allocations (a timed read or delete must make none), so also one thread, no harness.
+[[test]]
+name = "bench_inputs"
+harness = false
+
+# Also counts allocations (`Corpus::find` holds memory in quotes, not in hits), so also one
+# thread, no harness.
+[[test]]
+name = "find_memory"
+harness = false

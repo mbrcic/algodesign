@@ -1,0 +1,19 @@
+# Lean / Lake
+lean/.lake/
+lean/build/
+
+# Rust
+rust/target/
+
+# Python
+**/__pycache__/
+python/.pytest_cache/
+python/.mypy_cache/
+python/*.egg-info/
+python/.venv/
+.hypothesis/
+**/.hypothesis/
+*.pyc
+
+# OS/editor
+.DS_Store

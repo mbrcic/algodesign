@@ -1,0 +1,30 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2021"
+# The newest standard-library item this workspace uses is `Option::is_none_or`, stable in 1.82;
+# the `check-cfg` key below needs Cargo 1.80. Declared rather than left open so a reader on an
+# older toolchain gets a Cargo error naming the version instead of a rustc error naming a method,
+# and checked by a CI job that builds the library with exactly this toolchain -- an MSRV nothing
+# ever builds with is a claim, not a constraint.
+rust-version = "1.82"
+license = "Apache-2.0"
+repository = "https://github.com/mbrcic/algodesign"
+
+[workspace.lints.rust]
+# `red_black_standard.rs` tells the reader there is no `unsafe` in these trees, and `bst.rs` and
+# `treap.rs` rest their depth arguments on it: an explicit stack is only safer than the call stack
+# if nothing reaches around it. `forbid`, not `deny`, so
+# an inner `#[allow]` cannot quietly take it back.
+unsafe_code = "forbid"
+
+# Every public item carries a doc comment. This crate's docs *are* the explanation a reader gets,
+# and `cargo doc` is already a gate for broken links inside them ; this lint catches an item with no
+# doc at all.
+missing_docs = "warn"
+
+# CI runs clippy with `-D warnings`; this makes a plain local `cargo clippy` fail the same way.
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }

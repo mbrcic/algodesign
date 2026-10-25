@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python (mypy, pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev]"
+      - run: mypy --strict algodesign/ tests/
+      - run: pytest
+
+  rust:
+    name: Rust (fmt, clippy, test, doc)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v7
+      # rust-toolchain.toml pins the version; rustup installs it on first use.
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - run: cargo test --workspace
+      - run: cargo doc --no-deps --all-features
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  # The declared minimum (`rust-version` in rust/Cargo.toml) is a promise only if something builds
+  # with it. `+1.82` overrides rust-toolchain.toml, which pins the newer version the other jobs use.
+  msrv:
+    name: Rust (MSRV builds the library)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@1.82
+      - run: cargo +1.82 build -p algodesign --lib
+
+  lean:
+    name: Lean (build, axioms, specification tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: lean
+    steps:
+      - name: Free runner disk
+        working-directory: .
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - uses: actions/checkout@v7
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: lean
+          build: true
+          test: false
+          lint: false
+      - name: Only standard axioms, no proof holes
+        run: lake env lean CheckAxioms.lean
+      - name: Specification tests
+        run: |
+          lake env lean -DwarningAsError=true AlgoDesignTests/Searching.lean
+          lake env lean -DwarningAsError=true AlgoDesignTests/Strings.lean
+          lake env lean -DwarningAsError=true AlgoDesignTests/Geometry.lean
+          lake env lean -DwarningAsError=true AlgoDesignTests/Graphs.lean

@@ -1,0 +1,10 @@
+# The toolchain every blocking CI job and every local build uses. Pinned rather than `stable`
+# because clippy adds lints every six weeks and CI runs it with `-D warnings`: a floating
+# toolchain turns an unchanged tree red.
+# Moving it is a deliberate commit that fixes whatever the new clippy finds.
+#
+# The declared MSRV (`rust-version = "1.82"` in Cargo.toml) is checked separately by the `msrv`
+# job, which must say `cargo +1.82` explicitly: this file would otherwise override it.
+[toolchain]
+channel = "1.98.1"
+components = ["clippy", "rustfmt"]
